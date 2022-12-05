@@ -6,12 +6,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class FlashCardPlayer {
     JFrame frame = new JFrame("Quiz Card Player");
     JTextArea textArea = new JTextArea(6,20);
     JButton cardButton = new JButton("Check answer");
     JButton restartButton = new JButton("Reset deck");
+    JButton randomizeButton = new JButton("Randomize order");
+    JLabel randomizeLabel = new JLabel("Deck randomized!");
     boolean isQuestion = true;
     ArrayList<FlashCard> cardList = new ArrayList<>();
     int cardNumber = 0;
@@ -57,12 +60,22 @@ public class FlashCardPlayer {
                 nextCard();
             }
         });
+        cardButton.setVisible(false);
         panel.add(cardButton);
 
         //create restart button
         restartButton.addActionListener(e -> setFirstQuestion());
         restartButton.setVisible(false);
         panel.add(restartButton);
+
+        //create randomize button
+        randomizeButton.addActionListener(e -> randomizeDeck());
+        randomizeButton.setVisible(false);
+        panel.add(randomizeButton);
+
+        //create randomize label
+        randomizeLabel.setVisible(false);
+        panel.add(randomizeLabel);
 
         //add content panel to frame, set layout style, and make all elements visible
         frame.getContentPane().add(BorderLayout.CENTER,panel);
@@ -80,6 +93,7 @@ public class FlashCardPlayer {
         }
     }
     public void loadFile(File file) { //loads text file and sends each line to be remade into a card
+        cardList.clear(); //in case a deck has already been played this session, clear it out
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
@@ -88,7 +102,12 @@ public class FlashCardPlayer {
             }
             reader.close();
             setFirstQuestion();
+
+            //set appropriate visibility statuses for fresh deck load
+            cardButton.setVisible(true);
             restartButton.setVisible(true);
+            randomizeButton.setVisible(true);
+            randomizeLabel.setVisible(false);
         } catch (IOException e) {
             System.out.println("Could not read file: " + e.getMessage());
         }
@@ -119,5 +138,11 @@ public class FlashCardPlayer {
             cardButton.setText("Check answer");
             textArea.setText(cardList.get(cardNumber).getQuestion());
         }
+    }
+    public void randomizeDeck() {
+        randomizeButton.setVisible(false);
+        randomizeLabel.setVisible(true);
+        Collections.shuffle(cardList);
+        setFirstQuestion();
     }
 }
