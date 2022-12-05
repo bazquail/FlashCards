@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,12 +22,14 @@ public class FlashCardPlayer {
         createGUI();
     }
     public void createGUI() {
+        //set main frame and content panel parameters
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setBounds(1200, 100,500,600);
+        frame.setBounds(400, 150,500,600);
 
         JPanel panel = new JPanel();
         panel.setBackground(Color.gray);
 
+        //create text area & scroll pane for questions and answers
         textArea.setFont(new Font("sanserif", Font.BOLD,24));
         textArea.setLineWrap(true);
         textArea.setEditable(false);
@@ -37,38 +40,51 @@ public class FlashCardPlayer {
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         panel.add(scrollPane);
 
+        //create navigation bar and associated drop down elements
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
+
         JMenuItem openMenuItem = new JMenuItem("Open");
         openMenuItem.addActionListener(e -> open());
         fileMenu.add(openMenuItem);
+
         menuBar.add(fileMenu);
         frame.setJMenuBar(menuBar);
 
-        cardButton.addActionListener(e -> nextCard());
+        //create card button
+        cardButton.addActionListener(e -> {
+            if (!cardButton.getText().equals("No more cards!")) { //skip if all cards are used
+                nextCard();
+            }
+        });
         panel.add(cardButton);
 
+        //create restart button
         restartButton.addActionListener(e -> setFirstQuestion());
         restartButton.setVisible(false);
         panel.add(restartButton);
 
+        //add content panel to frame, set layout style, and make all elements visible
         frame.getContentPane().add(BorderLayout.CENTER,panel);
         frame.setVisible(true);
     }
-    public void open() {
+    public void open() { //creates dialog menu for opening files
         JFileChooser fileOpen = new JFileChooser();
-        if (fileOpen.showOpenDialog(frame) == JFileChooser.OPEN_DIALOG) {
+        FileNameExtensionFilter textFileFilter = new FileNameExtensionFilter("Text files", "txt");
+        fileOpen.setFileFilter(textFileFilter);
+
+        if (fileOpen.showOpenDialog(frame) == JFileChooser.OPEN_DIALOG) { //only executes if open button is clicked in dialog pop up
             loadFile(fileOpen.getSelectedFile());
         } else {
-            System.out.println("No file selected");
+           System.out.println("No file selected");
         }
     }
-    public void loadFile(File file) {
+    public void loadFile(File file) { //loads text file and sends each line to be remade into a card
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
             while ((line = reader.readLine()) != null) {
-                createCards(line);
+                createCard(line);
             }
             reader.close();
             setFirstQuestion();
@@ -77,13 +93,13 @@ public class FlashCardPlayer {
             System.out.println("Could not read file: " + e.getMessage());
         }
     }
-    public void setFirstQuestion() {
+    public void setFirstQuestion() { //displays first question from loaded set
         isQuestion = true;
         cardNumber = 0;
         textArea.setText(cardList.get(cardNumber).getQuestion());
         cardButton.setText("Check answer");
     }
-    public void createCards(String line) {
+    public void createCard(String line) { //separates line from file into question and answer & assigns to a new card
         String[] result = line.split("/");
         FlashCard card = new FlashCard();
         card.setQuestion(result[0]);
@@ -91,19 +107,17 @@ public class FlashCardPlayer {
         cardList.add(card);
     }
     public void nextCard() {
-        if (cardNumber < (cardList.size())) {
-            if (isQuestion) {
-                isQuestion = false;
-                textArea.setText(cardList.get(cardNumber).getAnswer());
-                cardNumber++;
-                if (cardNumber < cardList.size()) {
-                    cardButton.setText("Next question");
-                } else { cardButton.setText("No more cards!"); }
-            } else {
-                isQuestion = true;
-                cardButton.setText("Check answer");
-                textArea.setText(cardList.get(cardNumber).getQuestion());
-            }
+        if (isQuestion) { //will display answer portion of card if currently displaying the question
+            isQuestion = false;
+            textArea.setText(cardList.get(cardNumber).getAnswer());
+            cardNumber++;
+            if (cardNumber < cardList.size()) {
+                cardButton.setText("Next question");
+            } else { cardButton.setText("No more cards!"); }
+        } else { //will display next card's question if currently displaying an answer
+            isQuestion = true;
+            cardButton.setText("Check answer");
+            textArea.setText(cardList.get(cardNumber).getQuestion());
         }
     }
 }

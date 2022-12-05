@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -7,69 +8,79 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class FlashCardCreator {
-    static JFrame frame = new JFrame("Flash Cards");
-    static JTextArea questionBox;
-    static JTextArea answerBox;
-    static ArrayList<FlashCard> cardList = new ArrayList<>();
+    JFrame frame = new JFrame("Flash Cards");
+    JTextArea questionBox;
+    JTextArea answerBox;
+    ArrayList<FlashCard> cardList = new ArrayList<>();
 
     public static void main(String[] args) {
-        FlashCardCreator engine = new FlashCardCreator();
-        engine.go();
+        new FlashCardCreator().go();
     }
-    public static void go() {
+    public void go() {
         createGUI();
     }
-    public static void createGUI() {
+    public void createGUI() {
+        //set main frame and content panel parameters
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setBounds(600,100,500,600);
+        frame.setBounds(300,100,500,600);
 
         JPanel panel = new JPanel();
         panel.setBackground(Color.gray);
 
+        //create question label and text area
         Font font = new Font("sanserif",Font.BOLD,24);
         String startUpMessage = "After creating all your cards, make sure to save the set using File > " +
                 "Save before trying to play it!";
         questionBox = createTextArea(font, startUpMessage);
-        JScrollPane qScrollPane = createScrollPane(questionBox);
+        JScrollPane questionScrollPane = createScrollPane(questionBox);
         panel.add(new JLabel("Question:"));
-        panel.add(qScrollPane);
+        panel.add(questionScrollPane);
+
+        //create answer label and text area
         startUpMessage = "";
         answerBox = createTextArea(font, startUpMessage);
-        JScrollPane aScrollPane = createScrollPane(answerBox);
+        JScrollPane answerScrollPane = createScrollPane(answerBox);
         panel.add(new JLabel("Answer:"));
-        panel.add(aScrollPane);
+        panel.add(answerScrollPane);
 
+        //create navigation bar and associated drop down elements
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
+
         JMenuItem newMenuItem = new JMenuItem("New");
         newMenuItem.addActionListener(e -> clearAll());
+        fileMenu.add(newMenuItem);
+
         JMenuItem saveMenuItem = new JMenuItem("Save");
         saveMenuItem.addActionListener(e -> saveCards());
+        fileMenu.add(saveMenuItem);
+
         JMenuItem playMenuItem = new JMenuItem("Play");
         playMenuItem.addActionListener(e -> new FlashCardPlayer());
-        fileMenu.add(newMenuItem);
-        fileMenu.add(saveMenuItem);
         fileMenu.add(playMenuItem);
+
         menuBar.add(fileMenu);
         frame.setJMenuBar(menuBar);
 
+        //create card button
         JButton createButton = new JButton("Create card!");
         createButton.addActionListener(a -> createCard());
         panel.add(createButton);
 
+        //add content panel to frame, set layout style, and make all elements visible
         frame.getContentPane().add(BorderLayout.CENTER,panel);
         frame.setVisible(true);
     }
-    public static void clearCard() {
+    public void clearCard() { //used after adding card to card list
         questionBox.setText("");
         answerBox.setText("");
         questionBox.requestFocus();
     }
-    public static void clearAll() {
+    public void clearAll() { //used to abandon current, unsaved set of cards and start new
         clearCard();
         cardList.clear();
     }
-    public static void createCard() {
+    public void createCard() {
         if (!answerBox.getText().equals("") && !questionBox.getText().equals("")) {
             FlashCard card = new FlashCard();
             card.setQuestion(questionBox.getText());
@@ -80,12 +91,22 @@ public class FlashCardCreator {
             System.out.println("Type something in both boxes!");
         }
     }
-    public static void saveCards() {
-        JFileChooser fileSave = new JFileChooser();
-        fileSave.showSaveDialog(frame);
-        saveFile(fileSave.getSelectedFile());
+    public void saveCards() { //creates dialog menu for saving files
+        if (!cardList.isEmpty()) { //skip if there is nothing to save
+            JFileChooser fileSave = new JFileChooser();
+            FileNameExtensionFilter textFileFilter = new FileNameExtensionFilter("Text files", "txt");
+            fileSave.setFileFilter(textFileFilter);
+
+            if (fileSave.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) { //only executes if save button is clicked in dialog pop up
+                saveFile(fileSave.getSelectedFile());
+            } else {
+                System.out.println("Save Failed: save dialog aborted.");
+            }
+        } else {
+            System.out.println("Save Failed: no cards created for current set.");
+        }
     }
-    public static void saveFile(File file) {
+    public void saveFile(File file) { //saves card set as a text file with questions and associated answers separated by /
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
             for (FlashCard card : cardList) {
@@ -97,7 +118,7 @@ public class FlashCardCreator {
             System.out.println("Couldn't write to file: " + e.getMessage());
         }
     }
-    public static JTextArea createTextArea(Font font, String text) {
+    public JTextArea createTextArea(Font font, String text) { //sets text area parameters
         JTextArea textArea = new JTextArea(6,20);
         textArea.setFont(font);
         textArea.setLineWrap(true);
@@ -105,7 +126,7 @@ public class FlashCardCreator {
         textArea.setText(text);
         return textArea;
     }
-    public static JScrollPane createScrollPane(JTextArea textArea) {
+    public JScrollPane createScrollPane(JTextArea textArea) { //takes text area and assigns it to a scroll pane
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
